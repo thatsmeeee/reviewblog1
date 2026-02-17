@@ -11,15 +11,18 @@ class AuthService {
     required String email,
     required String password,
   }) async {
+    // 1. Get Supabase client from SupabaseService singleton
     final client = SupabaseService.client;
 
     try {
-      // Step 1: Sign in with Supabase Auth
+      // 2. Authenticate user with Supabase Auth API
+      // This sends HTTP request to your Supabase instance
       final res = await client.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
+      // 3. Check if authentication was successful
       if (res.user == null) {
         log('Login failed: invalid credentials');
         return null;
@@ -27,9 +30,10 @@ class AuthService {
 
       log('Login successful: ${res.user!.email}');
 
-      // Step 2: Fetch user profile from joel-profile table
+      // 4. Fetch user profile from joel-profile table
+      // This queries your database for the user's profile data
       final profile = await client
-          .from('joel-profile')
+          .from('joel_profile')
           .select()
           .eq(
             'id',
@@ -37,6 +41,7 @@ class AuthService {
           ) // assuming your profile ID matches auth user ID
           .maybeSingle(); // returns Map<String, dynamic> or null
 
+      // 5. Check if profile exists in database
       if (profile == null) {
         log('Profile not found for user: ${res.user!.email}');
         return null;
@@ -50,6 +55,82 @@ class AuthService {
     } catch (e) {
       log('Unexpected login error: $e');
       return null;
+    }
+  }
+
+  /// Signs up a new user and creates their profile
+  static Future<bool> signup({
+    required String email,
+    required String password,
+    required String username,
+  }) async {
+    final client = SupabaseService.client;
+
+    try {
+      // Step 1: Create user in Supabase Auth
+      final authResponse = await client.auth.signUp(
+        email: email,
+        password: password,
+        data: {'username': username},
+      );
+
+      // Check if user was created (even if confirmation is pending)
+      if (authResponse.user == null) {
+        log('Signup failed: could not create auth user');
+        return false;
+      }
+
+      log('Auth user created: ${authResponse.user!.email}');
+      log('Email confirmation: ${authResponse.user!.emailConfirmedAt}');
+
+      // Step 2: Try to auto-login to bypass email confirmation
+      try {
+        final loginResponse = await client.auth.signInWithPassword(
+          email: email,
+          password: password,
+        );
+
+        if (loginResponse.user != null) {
+          log('Auto-login successful after signup');
+        }
+      } catch (e) {
+        log('Auto-login failed (expected if email confirmation required): $e');
+      }
+
+      // Step 3: Create user profile in joel_profile table
+      final profileData = {
+        'id': authResponse.user!.id,
+        'email': email,
+        'username': username,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      final profileResponse = await client
+          .from('joel_profile')
+          .insert(profileData);
+
+      if (profileResponse.error != null) {
+        log('Profile creation failed: ${profileResponse.error!.message}');
+        return false;
+      }
+
+      log('Profile created successfully for user: $username');
+      return true;
+    } on AuthException catch (e) {
+      log('Supabase auth signup error: ${e.message}');
+      log('Auth error details: ${e.toString()}');
+
+      // Check if user was created but needs email confirmation
+      if (e.message.contains('confirmation') || e.message.contains('email')) {
+        log('User created but email confirmation required');
+        return true; // User was created, just needs confirmation
+      }
+      return false;
+    } catch (e) {
+      log('Unexpected signup error: $e');
+      log('Error type: ${e.runtimeType}');
+      return false;
     }
   }
 

@@ -3,7 +3,7 @@ import '../styles/apptext_styles.dart';
 import '../widgets/app_widgets.dart';
 import '../services/auth_server.dart';
 import '../utils/validators.dart';
-// import 'package:go_router/go_router.dart';
+import 'package:go_router/go_router.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -34,25 +34,35 @@ class _LoginPageState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    //setState() local state, widget-only
+    // 1. Clear any previous login errors
     setState(() => _loginError = null);
 
+    // 2. Validate form inputs (email format, password length)
     if (!_formKey.currentState!.validate()) return;
 
+    // 3. Show loading state to user
     setState(() => _isLoading = true);
 
-    final success = await AuthService.login(
+    // 4. Call AuthService.login() which connects to Supabase Auth
+    // This uses SupabaseService.client to authenticate user
+    final profile = await AuthService.login(
       email: _emailController.text.trim(),
       password: _passwordController.text,
     );
 
+    // 5. Check if widget is still mounted before updating state
     if (!mounted) return;
 
+    // 6. Hide loading state
     setState(() => _isLoading = false);
-    if (!success) {
+
+    // 7. Check if login was successful (profile != null)
+    if (profile == null) {
+      // 8. Show error if login failed
       setState(() => _loginError = 'Invalid Email or Password');
     } else {
-      // if success redirecte to dashboard
+      // 9. Navigate to dashboard on successful login
+      // This uses GoRouter to navigate to /dashboard route
       Navigator.pushReplacementNamed(context, '/dashboard');
     }
   }
@@ -125,6 +135,18 @@ class _LoginPageState extends State<LoginScreen> {
                       text: "Login",
                       isLoading: _isLoading,
                       onPressed: _login,
+                    ),
+                    const SizedBox(height: 20),
+                    TextButton(
+                      onPressed: () {
+                        context.push('/signup');
+                      },
+                      child: const Text(
+                        'Don\'t have an account? Create Account',
+                        style: TextStyle(
+                          color: Color.fromARGB(255, 109, 199, 241),
+                        ),
+                      ),
                     ),
                   ],
                 ),

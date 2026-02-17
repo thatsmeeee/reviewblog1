@@ -12,4 +12,14 @@ class Validators {
     if (value.length < 6) return "Password must be at least 6 characters";
     return null;
   }
+
+  static String? username(String? value) {
+    if (value == null || value.isEmpty) return "Username is required";
+    if (value.length < 3) return "Username must be at least 3 characters";
+    if (value.length > 20) return "Username must be less than 20 characters";
+    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
+      return "Username can only contain letters, numbers, and underscores";
+    }
+    return null;
+  }
 }
