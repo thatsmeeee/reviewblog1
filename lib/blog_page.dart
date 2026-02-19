@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:uuid/uuid.dart';
 import 'package:go_router/go_router.dart';
 import 'blog_form.dart';
 import 'services/supabase_service.dart';
@@ -58,7 +55,7 @@ class _BlogPageState extends State<BlogPage> {
         actions: [
           IconButton(
             onPressed: () {
-              context.push('/lifecycle');
+              GoRouter.of(context).push('/lifecycle');
             },
             icon: const Icon(Icons.science),
             tooltip: 'Test Lifecycle Methods',
