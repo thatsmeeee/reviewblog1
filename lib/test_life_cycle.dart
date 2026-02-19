@@ -7,12 +7,7 @@ class TestLifecyclePage extends StatefulWidget {
   const TestLifecyclePage({super.key});
 
   @override
-  State<TestLifecyclePage> createState() {
-    print('🏗️ createState() - Called when Flutter builds the StatefulWidget');
-    print('   This method creates the mutable State object');
-    print('   It is called exactly once for each StatefulWidget instance');
-    return _TestLifecyclePageState();
-  }
+  State<TestLifecyclePage> createState() => _TestLifecyclePageState();
 }
 
 class _TestLifecyclePageState extends State<TestLifecyclePage>
